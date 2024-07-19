@@ -33,8 +33,8 @@ class TestCleanLeads(unittest.TestCase):
         cleaner.clean_leads()
 
         # Verificación de llamadas a métodos de Odoo
-        self.assertEqual(mock_odoo_instance.create.call_count, 0)  # No debería crear nada si todo es correcto
-        self.assertEqual(mock_odoo_instance.update.call_count, 0)  # No debería actualizar nada si todo es correcto
+        self.assertEqual(mock_odoo_instance.create.call_count, 0)  # No debería crear nada si es correcto
+        self.assertEqual(mock_odoo_instance.update.call_count, 0)  # No debería actualizar nada si es correcto
 
     @patch('app.clean_leads.Odoo', autospec=True)
     def test_clean_leads_with_incorrect_leads(self, mock_odoo):
