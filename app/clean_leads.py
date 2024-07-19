@@ -1,7 +1,7 @@
 import Levenshtein
 
-from interfaces import CrmLead, ResPartner
 from app.odoo import Odoo
+from interfaces import CrmLead, ResPartner
 
 
 class CleanLeads:
@@ -47,13 +47,10 @@ class CleanLeads:
 
         # Se crean dict para búsqueda mas rapida
         partners: dict[str, ResPartner] = {p.name: p for p in sorted(_partners, key=lambda _p: _p.id) if p.name}
-        partners_by_parent_id = {}
         for p in _partners:
-            partners_by_parent_id.setdefault(p.parent_id, []).append(p)
-
-        # Companies/contactos creados
-        companies = 0
-        contacts = 0
+            if p.is_company or not p.name or not p.parent_id:
+                continue
+            self.partners_by_parent_id.setdefault(p.parent_id, []).append(p)
 
         for lead in incorrectos:
             # ¿Existe ya una compañía para ese `partner_name`?
@@ -63,7 +60,7 @@ class CleanLeads:
                 partner_id = company.id
 
                 # Buscamos a la persona en la compannia
-                for p in partners_by_parent_id.get(partner_id, []):
+                for p in self.partners_by_parent_id.get(partner_id, []):
                     if p.name in (lead.display_name, lead.contact_name):
                         break
                 else:
@@ -73,7 +70,7 @@ class CleanLeads:
                 # en caso de que no exista la persona
                 company_dict = ResPartner.create_from_lead(lead, True)
                 partner_id = self.odoo.create('res.partner', company_dict)
-                companies += 1
+                self.companies += 1
 
                 # Se actualiza el dict de companies:
                 company = ResPartner({**company_dict, 'id': partner_id})
@@ -86,6 +83,3 @@ class CleanLeads:
             # Por último se actualiza el lead:
             data = dict(partner_id=partner_id, name=company.name)
             self.odoo.update('crm.lead', lead.id, data)
-
-        print(f'Habían {len(incorrectos)} leads incorrectos en odoo.')
-        print(f'Se crearon {companies} compannias y {contacts} contactos.')
